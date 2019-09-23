@@ -1,0 +1,15 @@
+<h1>Movies</h1>
+
+<% @movies.each do |m| %>
+<div class="card-product">
+  <%= image_tag cl_image_path m.photo %>
+  <!-- <img src="https://raw.githubusercontent.com/lewagon/fullstack-images/master/uikit/skateboard.jpg" /> -->
+  <div class="card-product-infos">
+    <h2><%= m.title %></h2>
+    <p> <%= m.plot %> </p>
+    <p><strong> <%= m.year %> </strong></p>
+  </div>
+</div>
+<% end %>
+
+
