@@ -21,9 +21,10 @@ u = User.create(email: "admin@admin.com", password:"123456")
 
 puts "creating movies"
 
-country = 'brazil'
+COUNTRY = 'brazil'
 url_to_scrape = 'https://www.netflix.com/browse/genre/34399?so=az'
-HTML_TO_SAVE = "/home/isabela/code/isabelatravaglia/searchflix/movies_#{country}.html"
+HTML_TO_SAVE = "/home/isabela/code/isabelatravaglia/searchflix/movies_#{COUNTRY}.html"
+PN = Pathname.new(HTML_TO_SAVE)
 
 def browser
   @_browser ||= Watir::Browser.new(:firefox)
@@ -37,18 +38,22 @@ def scrape(url)
   puts "starting scraping!"
   file = open(url).read
   doc = Nokogiri::HTML(file)
-  doc.search('.slider-refocus').each do |movie|
+  doc.search('.slider-refocus').search('.fallback-text-container').each do |movie|
     m = Movie.new(title: movie.text)
-    movie.css('img').each do |movie_image|
-      movie_image_url = movie_image['src']
-    end
+    # m."#{COUNTRY}.lowcase" == true
+    m.save
+  end
+  doc.search('.slider-refocus').css('img').each do |movie_image|
+    # puts "getting image for movie #{movie.text}"
+    movie_image_url = movie_image['src']
+    m = Movie.last
     m.remote_photo_url = movie_image_url
     m.save
   end
 end
 
 def save_html
-  File.open(HTML_TO_SAVE, 'w') {|f| f.write @_browser.html }
+  File.open(HTML_TO_SAVE, 'w') { |f| f.write @_browser.html }
   puts "html saved!"
   scrape(HTML_TO_SAVE)
 end
@@ -76,18 +81,23 @@ def login
 end
 
 def scroll_down(url_to_scrape)
-  login unless @logged_in
-  puts "going to scrape page"
-  browser.goto(url_to_scrape)
-  loop do
-    puts "scrolling..."
-    link_number = browser.links.size
-    browser.scroll.to :bottom
-    sleep(2)
-    break if browser.links.size == link_number
+  puts "checking if scrape file exists"
+  puts "Does scrape file exist? #{PN.exist?}"
+  if !PN.exist?
+    login unless @logged_in
+    puts "going to scroll down scrape page"
+    browser.goto(url_to_scrape)
+    loop do
+      puts "scrolling..."
+      link_number = browser.links.size
+      browser.scroll.to :bottom
+      sleep(2)
+      break if browser.links.size == link_number
+    end
+    puts "finished scrolling. Saving html!"
+    save_html
   end
-  puts "finished scrolling. Saving html!"
-  save_html
+  scrape(HTML_TO_SAVE)
 end
 scroll_down(url_to_scrape)
 
