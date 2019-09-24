@@ -21,7 +21,7 @@ u = User.create(email: "admin@admin.com", password:"123456")
 
 puts "creating movies"
 
-COUNTRY = 'brazil'
+COUNTRY = 'portugal'
 url_to_scrape = 'https://www.netflix.com/browse/genre/34399?so=az'
 HTML_TO_SAVE = "/home/isabela/code/isabelatravaglia/searchflix/movies_#{COUNTRY}.html"
 PN = Pathname.new(HTML_TO_SAVE)
@@ -38,17 +38,16 @@ def scrape(url)
   puts "starting scraping!"
   file = open(url).read
   doc = Nokogiri::HTML(file)
-  doc.search('.slider-refocus').search('.fallback-text-container').each do |movie|
+  doc.search('.slider-refocus a').each do |movie|
+    puts "creating movie #{movie.text}"
     m = Movie.new(title: movie.text)
-    # m."#{COUNTRY}.lowcase" == true
-    m.save
-  end
-  doc.search('.slider-refocus').css('img').each do |movie_image|
-    # puts "getting image for movie #{movie.text}"
-    movie_image_url = movie_image['src']
-    m = Movie.last
-    m.remote_photo_url = movie_image_url
-    m.save
+    m.update("#{COUNTRY}": true)
+    movie.css('img').each do |movie_image|
+      movie_image_url = movie_image['src']
+      m.remote_photo_url = movie_image_url
+      m.save
+      puts "saved movie #{m.title} with image #{m.photo.url}"
+    end
   end
 end
 
