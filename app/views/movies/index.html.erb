@@ -1,15 +1,14 @@
 <h1>Movies</h1>
 
-<% @movies.each do |m| %>
-<div class="card-product">
-  <%= image_tag cl_image_path m.photo %>
-  <!-- <img src="https://raw.githubusercontent.com/lewagon/fullstack-images/master/uikit/skateboard.jpg" /> -->
-  <div class="card-product-infos">
-    <h2><%= m.title %></h2>
-    <p> <%= m.plot %> </p>
-    <p><strong> <%= m.year %> </strong></p>
-  </div>
+<div class="container">
+   <%= render @movies %>
 </div>
-<% end %>
+
+<div class="load-more-container">
+        <!-- hide our loading gif image so that we show it when making ajax call via jquery -->
+  <%#= cl_image_tag("ajax_loader"), style: "display:none;", class: "loading-gif" %>
+  <%= link_to "Loading", '#', class: "loading-gif" %>
+  <%= link_to "Load More", movies_path, class: "load-more" %>
+</div>
 
 
