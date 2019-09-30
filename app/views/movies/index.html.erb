@@ -1,15 +1,14 @@
 <h1>Movies</h1>
 
-<% @movies.each do |m| %>
-<div class="card-product">
-  <%= image_tag cl_image_path m.photo %>
-  <!-- <img src="https://raw.githubusercontent.com/lewagon/fullstack-images/master/uikit/skateboard.jpg" /> -->
-  <div class="card-product-infos">
-    <h2><%= m.title %></h2>
-    <p> <%= m.plot %> </p>
-    <p><strong> <%= m.year %> </strong></p>
-  </div>
+<div class="container">
+   <%= render partial: "movie" %>
+   <% @last_movie_id = @movies.last.id %>
 </div>
-<% end %>
+
+<div class="load-more-container">
+
+  <%= link_to "Loading", '#', class: "loading-gif" %>
+  <%= link_to "Load More", movies_path, class: "load-more", :remote => true %>
+</div>
 
 
