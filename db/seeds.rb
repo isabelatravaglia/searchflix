@@ -27,7 +27,11 @@ HTML_TO_SAVE = "/home/isabela/code/isabelatravaglia/searchflix/movies_#{COUNTRY}
 PN = Pathname.new(HTML_TO_SAVE)
 
 def browser
-  @_browser ||= Watir::Browser.new(:firefox)
+  if Rails.env.production?
+    @_browser ||= Watir::Browser.new :chrome
+  else
+    @_browser ||= Watir::Browser.new(:firefox)
+  end
 end
 
 def main_page?
