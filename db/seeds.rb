@@ -23,7 +23,11 @@ puts "creating movies"
 
 COUNTRY = 'portugal'
 url_to_scrape = 'https://www.netflix.com/browse/genre/34399?so=az'
-HTML_TO_SAVE = "/home/isabela/code/isabelatravaglia/searchflix/movies_#{COUNTRY}.html"
+if Rails.env.production?
+  HTML_TO_SAVE = "/app/movies_#{COUNTRY}.html"
+else
+  HTML_TO_SAVE = "/home/isabela/code/isabelatravaglia/searchflix/movies_#{COUNTRY}.html"
+end
 PN = Pathname.new(HTML_TO_SAVE)
 
 def browser
