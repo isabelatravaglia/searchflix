@@ -22,10 +22,9 @@ const loadMore = () => {
               moviesContainer.insertAdjacentHTML('beforeEnd', data.movies);
             })
             .then( () => {
-              loadMore.style.display="block"
-              loading.style.display="none"
-            }
-            )
+              loadMore.style.display="block";
+              loading.style.display="none";
+            });
       });
   };
 export { loadMore };
