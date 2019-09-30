@@ -1,30 +1,31 @@
-// when the page is ready for manipulation
 const loadMore = () => {
-  // domReady(function () {
-    const loadMore = document.querySelector('.load-more');
-      loadMore.addEventListener('click', (event) => {
-        event.preventDefault();
+      const loadMore = document.querySelector('a.load-more');
+      const loading = document.querySelector('.loading-gif');
+      loading.style.display="none";
 
-          document.querySelector('.load-more').style.display="none";
-          document.querySelector('.loading-gif').style.display="block";
+        loadMore.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.currentTarget.setAttribute("disabled", "");
 
-          var last_id = document.querySelector('.container').lastChild.previousElementSibling.dataset.id;
+            loadMore.style.display="none";
+            loading.style.display="block";
 
-          console.log(event.target.href);
-          const url = event.target.href;
+            var lastId = document.querySelector('.container').lastChild.previousElementSibling.dataset.id;
 
-          fetch(url, {dataType: 'JSON'})
-          .then((response) => {console.log(response)}
+            const url = new URL (event.target.href), params = {id: lastId}
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]))
+            const moviesContainer = document.querySelector('.container');
+
+            fetch(url)
+            .then(response => response.json())
+            .then((data) => {
+              moviesContainer.insertAdjacentHTML('beforeEnd', data.movies);
+            })
+            .then( () => {
+              loadMore.style.display="block"
+              loading.style.display="none"
+            }
             )
-          .then(data => {
-            // id: last_id
-            console.log(data);
-          })
-      //     .then(function () {
-      //             document.querySelector('.loading-gif').hide();
-      //             document.querySelector('.load-more').show();
-    });
-  // })
-};
-
+      });
+  };
 export { loadMore };

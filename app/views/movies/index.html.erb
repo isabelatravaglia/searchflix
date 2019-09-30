@@ -1,14 +1,14 @@
 <h1>Movies</h1>
 
 <div class="container">
-   <%= render @movies %>
+   <%= render partial: "movie" %>
+   <% @last_movie_id = @movies.last.id %>
 </div>
 
 <div class="load-more-container">
-        <!-- hide our loading gif image so that we show it when making ajax call via jquery -->
-  <%#= cl_image_tag("ajax_loader"), style: "display:none;", class: "loading-gif" %>
+
   <%= link_to "Loading", '#', class: "loading-gif" %>
-  <%= link_to "Load More", movies_path, class: "load-more" %>
+  <%= link_to "Load More", movies_path, class: "load-more", :remote => true %>
 </div>
 
 
