@@ -18,7 +18,9 @@ gem 'selenium-webdriver'
 gem 'autoprefixer-rails'
 gem 'font-awesome-sass', '~> 5.6.1'
 gem 'sassc-rails'
-gem 'simple_form'
+
+gem "simple_form", ">= 5.0.0"
+
 gem 'uglifier'
 gem 'webpacker'
 
