@@ -45,18 +45,21 @@ def scrape(saved_html)
   doc.search('.slider-refocus a').each do |movie|
     puts "creating/updating movie #{movie.text}"
     m = Movie.find_or_initialize_by(title: movie.text)
-
+    puts "setting #{saved_html[:country]} to true"
     country = saved_html[:country]
     m[:"#{country}"] = true
+    m.save
+    puts "movie #{m.title} has #{country} as #{m[:"#{country}"]}"
     puts "movie #{m.title} has id #{m.id}"
     next unless m.id.nil?
 
     puts "#{movie.text} is new!"
     movie.css('img').each do |movie_image|
+
       movie_image_url = movie_image['src']
       image_download_start_time = Time.now
       puts "starting image download at #{image_download_start_time}"
-
+      sleep(rand(3..5))
       m.remote_photo_url = movie_image_url
       m.save
       image_download_end_time = Time.now
@@ -135,7 +138,7 @@ def scroll_down(url_to_scrape, country)
   scrape(scrape_html(country, criterion))
 end
 
-country = 'portugal'
+country = 'brazil'
 urls_to_scrape.each { |url| scroll_down(url, country) }
 
 end_time = Time.now
