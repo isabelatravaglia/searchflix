@@ -34,7 +34,7 @@ def browser
   if Rails.env.production?
     @_browser ||= Watir::Browser.new :chrome
   else
-    @_browser ||= Watir::Browser.new(:firefox)
+    @_browser ||= Watir::Browser.new :firefox, headless: true
   end
 end
 
@@ -48,7 +48,16 @@ def puts_movie_image_runtime
   puts "finished image download at #{image_download_end_time}. Total length is #{image_download_total_length} seconds"
 end
 
-def set_movie_image(movie)
+def fetch_movie_year(m)
+  netflix_id = m.netflix_id
+  browser.goto("https://www.netflix.com/title/#{netflix_id}")
+  year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
+  year = year_spans[0].text.to_i
+  m.year = year
+  sleep(rand(2..7))
+end
+
+def fetch_movie_image(movie)
   movie.css('img').each do |movie_image|
     movie_image_url = movie_image['src']
     image_download_start_time = Time.now
@@ -61,13 +70,13 @@ def set_movie_image(movie)
   end
 end
 
-def set_movie_netflix_id(movie, m)
+def fetch_movie_netflix_id(movie, m)
   href = movie['href']
   href ? netflix_id = href[7..14] : netflix_id = "0000000"
   m.netflix_id = netflix_id
 end
 
-def set_movie_country(saved_html, m)
+def fetch_movie_country(saved_html, m)
   puts "setting #{saved_html[:country]} to true"
   country = saved_html[:country]
   m[:"#{country}"] = true
@@ -80,13 +89,13 @@ def scrape(saved_html)
   doc.search('.slider-refocus a').each do |movie|
     puts "creating/updating movie #{movie.text}"
     m = Movie.find_or_initialize_by(title: movie.text)
-    set_movie_country(saved_html, m)
-    set_movie_netflix_id(movie, m)
+    fetch_movie_country(saved_html, m)
+    fetch_movie_netflix_id(movie, m)
+    fetch_movie_year(m) if m.year.nil?
     m.save
     puts "movie #{m.title} has id #{m.id}"
     next unless m.id.nil?
-
-    set_movie_image(movie)
+    fetch_movie_image(movie)
     puts "#{movie.text} is new!"
   end
 end
