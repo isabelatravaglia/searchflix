@@ -42,7 +42,7 @@ def main_page?
   browser.element(id: 'userNavigationLabel').exist?
 end
 
-def puts_movie_image_runtime
+def puts_movie_image_runtime(image_download_start_time)
   image_download_end_time = Time.now
   image_download_total_length = (image_download_end_time - image_download_start_time)
   puts "finished image download at #{image_download_end_time}. Total length is #{image_download_total_length} seconds"
@@ -51,10 +51,12 @@ end
 def fetch_movie_year(m)
   netflix_id = m.netflix_id
   browser.goto("https://www.netflix.com/title/#{netflix_id}")
-  year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
-  year = year_spans[0].text.to_i
-  m.year = year
-  sleep(rand(2..7))
+  if !browser.element(class: 'errorBox').exists?
+    year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
+    year = year_spans[0].text.to_i
+    m.year = year
+    sleep(rand(2..7))
+  end
 end
 
 def fetch_movie_image(movie)
@@ -65,15 +67,15 @@ def fetch_movie_image(movie)
     sleep(rand(3..5)) # avoid website block
     m.remote_photo_url = movie_image_url
     m.save
-    puts_movie_image_runtime
+    puts_movie_image_runtime(image_download_start_time)
     puts "saved movie #{m.title} with image #{m.photo.url}"
   end
 end
 
-def fetch_movie_netflix_id(movie, m)
+def fetch_movie_netflix_id(movie)
   href = movie['href']
   href ? netflix_id = href[7..14] : netflix_id = "0000000"
-  m.netflix_id = netflix_id
+  netflix_id
 end
 
 def fetch_movie_country(saved_html, m)
@@ -88,13 +90,16 @@ def scrape(saved_html)
   doc = Nokogiri::HTML(file)
   doc.search('.slider-refocus a').each do |movie|
     puts "creating/updating movie #{movie.text}"
-    m = Movie.find_or_initialize_by(title: movie.text)
+    netflix_id = fetch_movie_netflix_id(movie)
+    m = Movie.find_or_initialize_by(netflix_id: netflix_id)
     fetch_movie_country(saved_html, m)
-    fetch_movie_netflix_id(movie, m)
+    m.netflix_id = netflix_id
     fetch_movie_year(m) if m.year.nil?
+    m.title = movie.text
     m.save
     puts "movie #{m.title} has id #{m.id}"
     next unless m.id.nil?
+
     fetch_movie_image(movie)
     puts "#{movie.text} is new!"
   end
