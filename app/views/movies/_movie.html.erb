@@ -1,10 +1,12 @@
 <% @movies.each do |movie| %>
 <div class="card-product" data-id="<%= movie.id %>">
-  <%= image_tag cl_image_path movie.photo %>
+  <% if !movie.photo.url.nil? %>
+    <%= image_tag cl_image_path movie.photo %>
+  <% end %>
   <div class="card-product-infos">
     <h2><%= movie.title %></h2>
     <p> <%= movie.plot %> </p>
-    <p><strong> <%= movie.year %> </strong></p>
+    <p><strong> Year: <%= movie.year %> </strong></p>
     <p><strong> <%= movie.id %> </strong></p>
   </div>
 </div>
