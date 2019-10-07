@@ -1,8 +1,6 @@
 class MoviesController < ApplicationController
   protect_from_forgery except: :index
-  # def index
-  #   @movies = Movie.all
-  # end
+  skip_before_action :authenticate_user!, only: [:index]
 
   def index
     # if the id params is present
