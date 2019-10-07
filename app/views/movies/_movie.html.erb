@@ -1,17 +1,24 @@
 <% @movies.each do |movie| %>
-<div class="card-product" data-id="<%= movie.id %>">
-  <% if !movie.photo.url.nil? %>
-    <%= image_tag cl_image_path movie.photo %>
-  <% end %>
-  <div class="card-product-infos">
-    <h2><%= movie.title %></h2>
-    <p> <%= movie.plot %> </p>
-    <p><strong> Year: <%= movie.year %> </strong></p>
-    <p><strong> <%= movie.id %> </strong></p>
-    <ul>
-      <li><% image_tag(asset_path('br.svg')) if movie.brazil == true %></li>
-    </ul>
-
+<div class="col-sm-12 col-md-12 col-lg-6">
+  <div class="card-product" data-id="<%= movie.id %>">
+    <% if !movie.photo.url.nil? %>
+      <%= image_tag cl_image_path movie.photo %>
+    <% end %>
+    <div class="card-product-infos">
+      <h2><%= movie.title %></h2>
+      <p> <%= movie.plot %> </p>
+      <p><strong> Year: <%= movie.year %> </strong></p>
+      <p><strong> <%= movie.id %> </strong></p>
+      <ul>
+        <li><%= image_tag(asset_path('us.svg')) if movie.us == true %></li>
+        <li><%= image_tag(asset_path('br.svg')) if movie.brazil == true %></li>
+        <li><%= image_tag(asset_path('pt.svg')) if movie.portugal == true %></li>
+        <li><%= image_tag(asset_path('se.svg')) if movie.sweden == true %></li>
+        <li><%= image_tag(asset_path('fr.svg')) if movie.france == true %></li>
+        <li><%= image_tag(asset_path('de.svg')) if movie.germany == true %></li>
+      </ul>
+    </div>
   </div>
+  <br>
 </div>
 <% end %>

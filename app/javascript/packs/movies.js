@@ -10,11 +10,11 @@ const loadMore = () => {
             loadMore.style.display="none";
             loading.style.display="block";
 
-            var lastId = document.querySelector('.container').lastChild.previousElementSibling.dataset.id;
+            var lastId = document.querySelector('.row').lastChild.previousElementSibling.childNodes[1].dataset.id;
 
             const url = new URL (event.target.href), params = {id: lastId}
             Object.keys(params).forEach(key => url.searchParams.append(key, params[key]))
-            const moviesContainer = document.querySelector('.container');
+            const moviesContainer = document.querySelector('.row');
 
             fetch(url)
             .then(response => response.json())

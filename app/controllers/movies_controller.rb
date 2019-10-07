@@ -7,10 +7,10 @@ class MoviesController < ApplicationController
   def index
     # if the id params is present
     if params[:id]
-      @movies = Movie.where('id <?', params[:id]).limit(10)
+      @movies = Movie.where('id <?', params[:id]).limit(20)
       render json: { movies: render_to_string('movies/_movie', layout: false, locals: { movies: @movies }) }
     else
-      @movies = Movie.limit(10)
+      @movies = Movie.limit(20)
     end
   end
 end
