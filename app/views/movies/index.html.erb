@@ -1,8 +1,10 @@
 <h1>Movies</h1>
 
 <div class="container">
-   <%= render partial: "movie" %>
-   <% @last_movie_id = @movies.last.id %>
+  <div class="row">
+    <%= render partial: "movie" %>
+    <% @last_movie_id = @movies.last.id %>
+   </div>
 </div>
 
 <div class="load-more-container">
