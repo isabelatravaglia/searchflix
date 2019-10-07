@@ -8,6 +8,10 @@
     <p> <%= movie.plot %> </p>
     <p><strong> Year: <%= movie.year %> </strong></p>
     <p><strong> <%= movie.id %> </strong></p>
+    <ul>
+      <li><% image_tag(asset_path('br.svg')) if movie.brazil == true %></li>
+    </ul>
+
   </div>
 </div>
 <% end %>

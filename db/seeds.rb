@@ -23,6 +23,8 @@ u = User.create(email: "admin@admin.com", password: "123456")
 
 puts "creating movies"
 
+COUNTRY = 'us'
+
 INDEX_CRITERION = ['az', 'za']
 urls_to_scrape = INDEX_CRITERION.map { |c| "https://www.netflix.com/browse/genre/34399?so=#{c}" }
 
@@ -78,9 +80,9 @@ def fetch_movie_netflix_id(movie)
 end
 
 def fetch_movie_country(saved_html, m)
-  puts "setting #{saved_html[:country]} to true"
-  country = saved_html[:country]
-  m[:"#{country}"] = true
+  puts "setting #{COUNTRY} to true"
+  # country = saved_html[:country]
+  m[:"#{COUNTRY}"] = true
 end
 
 def scrape(saved_html)
@@ -91,16 +93,21 @@ def scrape(saved_html)
     puts "creating/updating movie #{movie.text}"
     netflix_id = fetch_movie_netflix_id(movie)
     m = Movie.find_or_initialize_by(netflix_id: netflix_id)
+    puts "checking if movie #{movie.text} is new for #{COUNTRY}."
+    puts "Does movie #{movie.text} has ID? #{!m.id.nil?}"
+    puts "Does movie #{movie.text} has #{COUNTRY} set to true? #{m[:"#{COUNTRY}"]}"
+    next if !m.id.nil? && m[:"#{COUNTRY}"] == true # skip if movie already exists for the current country
+
     fetch_movie_country(saved_html, m)
     puts m.id.nil? ? "movie #{m.title} still doesn't have an id" : "movie #{m.title} has id #{m.id}"
-    next unless m.id.nil?
+    next unless m.id.nil? # skip if movie already exists
 
     m.netflix_id = netflix_id
     fetch_movie_year(m) if m.year.nil?
     m.title = movie.text
     fetch_movie_image(movie, m)
     m.save
-    puts "#{movie.text} is new!"
+    puts "#{movie.text} create with id #{m.id}!"
   end
 end
 
@@ -128,10 +135,10 @@ def login
   @logged_in = main_page?
 end
 
-def set_html_to_save(country, criterion)
+def fetch_html_to_save(criterion)
   html_to_save = {
-    url: "#{HTML_PATH}movies_#{country}_#{criterion}.html",
-    country: country,
+    url: "#{HTML_PATH}movies_#{COUNTRY}_#{criterion}.html",
+    country: COUNTRY,
     criterion: criterion
   }
   html_to_save
@@ -150,21 +157,20 @@ def scrolling(url_to_scrape)
   puts "finished scrolling. Saving html!"
 end
 
-def prepare_to_scroll_down(url_to_scrape, country)
+def prepare_to_scroll_down(url_to_scrape)
   puts "checking if scrape file exists"
   criterion = url_to_scrape.split("").last(2).join
-  pn = Pathname.new(set_html_to_save(country, criterion)[:url])
+  pn = Pathname.new(fetch_html_to_save(criterion)[:url])
   puts "Does scrape file exist? #{pn.exist?}"
   if !pn.exist?
     login unless @logged_in
     scrolling(url_to_scrape)
-    save_html(set_html_to_save(country, criterion))
+    save_html(fetch_html_to_save(criterion))
   end
-  scrape(set_html_to_save(country, criterion))
+  scrape(fetch_html_to_save(criterion))
 end
 
-country = 'us'
-urls_to_scrape.each { |url| prepare_to_scroll_down(url, country) }
+urls_to_scrape.each { |url| prepare_to_scroll_down(url) }
 
 puts "creating watchlist"
 m1 = Movie.last
