@@ -51,22 +51,21 @@ end
 def fetch_movie_year(m)
   netflix_id = m.netflix_id
   browser.goto("https://www.netflix.com/title/#{netflix_id}")
-  if !browser.element(class: 'errorBox').exists?
-    year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
-    year = year_spans[0].text.to_i
-    m.year = year
-    sleep(rand(2..7))
-  end
+  return if browser.element(class: 'errorBox').exists?
+
+  year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
+  year = year_spans[0].text.to_i
+  m.year = year
+  sleep(rand(2..7))
 end
 
-def fetch_movie_image(movie)
+def fetch_movie_image(movie, m)
   movie.css('img').each do |movie_image|
     movie_image_url = movie_image['src']
     image_download_start_time = Time.now
     puts "starting image download at #{image_download_start_time}"
     sleep(rand(3..5)) # avoid website block
     m.remote_photo_url = movie_image_url
-    m.save
     puts_movie_image_runtime(image_download_start_time)
     puts "saved movie #{m.title} with image #{m.photo.url}"
   end
@@ -93,14 +92,14 @@ def scrape(saved_html)
     netflix_id = fetch_movie_netflix_id(movie)
     m = Movie.find_or_initialize_by(netflix_id: netflix_id)
     fetch_movie_country(saved_html, m)
+    puts m.id.nil? ? "movie #{m.title} still doesn't have an id" : "movie #{m.title} has id #{m.id}"
+    next unless m.id.nil?
+
     m.netflix_id = netflix_id
     fetch_movie_year(m) if m.year.nil?
     m.title = movie.text
+    fetch_movie_image(movie, m)
     m.save
-    puts "movie #{m.title} has id #{m.id}"
-    next unless m.id.nil?
-
-    fetch_movie_image(movie)
     puts "#{movie.text} is new!"
   end
 end
@@ -164,7 +163,7 @@ def prepare_to_scroll_down(url_to_scrape, country)
   scrape(set_html_to_save(country, criterion))
 end
 
-country = 'brazil'
+country = 'us'
 urls_to_scrape.each { |url| prepare_to_scroll_down(url, country) }
 
 puts "creating watchlist"
