@@ -1,0 +1,23 @@
+@include media-breakpoint-up(md) {
+
+.search-form {
+  width: 500px;
+  margin-left: 15px;
+  #query{
+    width: 250px;
+    }
+
+  }
+}
+
+.search-button {
+  background-color: transparent;
+  border-color: transparent ;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 20px;
+}
+
+.icon-search{
+  padding-top: 8px;
+}
+

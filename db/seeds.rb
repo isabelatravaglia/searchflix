@@ -51,6 +51,7 @@ def puts_movie_image_runtime(image_download_start_time)
 end
 
 def fetch_movie_year(m)
+  puts "start fetching movie year"
   netflix_id = m.netflix_id
   browser.goto("https://www.netflix.com/title/#{netflix_id}")
   return if browser.element(class: 'errorBox').exists?
@@ -58,6 +59,7 @@ def fetch_movie_year(m)
   year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
   year = year_spans[0].text.to_i
   m.year = year
+  puts "Movie year is #{m.year}"
   sleep(rand(2..7))
 end
 
