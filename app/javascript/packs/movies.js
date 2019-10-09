@@ -2,6 +2,7 @@ const loadMore = () => {
       const loadMore = document.querySelector('a.load-more');
       const loading = document.querySelector('.loading-gif');
       loading.style.display="none";
+      if (document.querySelector('.no-movies') !== null) loadMore.style.display="none"
 
         loadMore.addEventListener('click', (event) => {
           event.preventDefault();
