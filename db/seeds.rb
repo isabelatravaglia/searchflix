@@ -32,6 +32,7 @@ PROD_HTML_PATH = "/app/"
 DEV_HTML_PATH = "/home/isabela/code/isabelatravaglia/searchflix/"
 Rails.env.production? ? HTML_PATH = PROD_HTML_PATH : HTML_PATH = DEV_HTML_PATH
 
+
 def browser
   if Rails.env.production?
     @_browser ||= Watir::Browser.new :chrome
@@ -48,6 +49,50 @@ def puts_movie_image_runtime(image_download_start_time)
   image_download_end_time = Time.now
   image_download_total_length = (image_download_end_time - image_download_start_time)
   puts "finished image download at #{image_download_end_time}. Total length is #{image_download_total_length} seconds"
+end
+
+def handle_api_responses(m, response)
+  if JSON.parse(response)["Error"] == "Movie not found!"
+    m.omdb = false
+    m.save
+    puts "Movie not found!"
+    response
+  else
+    case response.code
+    when 200
+      puts "It worked!"
+      response
+    when 401
+      puts "Error 401!"
+      response
+    else
+      response.return!(&block)
+    end
+  end
+end
+
+ENCODING_OPTIONS = {
+  invalid: :replace, # Replace invalid byte sequences
+  undef: :replace, # Replace anything not defined in ASCII
+  replace: '', # Use a blank for those replacements
+  universal_newline: true # Always break lines with \n
+}
+
+def fetch_movie_details(m, title, year)
+  puts "fetching movie details from OMDB"
+  clean_title = title.gsub('#', '').encode(Encoding.find('ASCII'), ENCODING_OPTIONS)
+  omdb_response = RestClient.get("http://www.omdbapi.com/?t=#{clean_title}&y=#{year}&apikey=#{ENV["OMDB_KEY"]}") do |response, request, result, &block|
+    handle_api_responses(m, response)
+  end
+  rsp_json = JSON.parse(omdb_response).symbolize_keys
+  m.director = rsp_json[:Director]
+  m.runtime = rsp_json[:Runtime]
+  m.genre = rsp_json[:Genre]
+  m.writer = rsp_json[:Writer]
+  m.actors = rsp_json[:Actors]
+  m.plot = rsp_json[:Plot]
+  m.imdb_score = rsp_json[:imdbRating]
+  puts "done with fetching OMDB details"
 end
 
 def fetch_movie_year(m)
@@ -81,9 +126,8 @@ def fetch_movie_netflix_id(movie)
   netflix_id
 end
 
-def fetch_movie_country(saved_html, m)
+def fetch_movie_country(m)
   puts "setting #{COUNTRY} to true"
-  # country = saved_html[:country]
   m[:"#{COUNTRY}"] = true
 end
 
@@ -98,15 +142,19 @@ def scrape(saved_html)
     puts "checking if movie #{movie.text} is new for #{COUNTRY}."
     puts "Does movie #{movie.text} has ID? #{!m.id.nil?}"
     puts "Does movie #{movie.text} has #{COUNTRY} set to true? #{m[:"#{COUNTRY}"]}"
+    fetch_movie_details(m, m.title, m.year) if (m.imdb_score.nil? and m.omdb != false)
+    m.save
     next if !m.id.nil? && m[:"#{COUNTRY}"] == true # skip if movie already exists for the current country
 
     fetch_movie_country(saved_html, m)
+
     puts m.id.nil? ? "movie #{m.title} still doesn't have an id" : "movie #{m.title} has id #{m.id}"
     next unless m.id.nil? # skip if movie already exists
 
     m.netflix_id = netflix_id
     fetch_movie_year(m) if m.year.nil?
     m.title = movie.text
+    # fetch_movie_details(m, m.title, m.year)
     fetch_movie_image(movie, m)
     m.save
     puts "#{movie.text} create with id #{m.id}!"
