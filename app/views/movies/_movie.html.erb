@@ -1,27 +1,32 @@
-<% if @movies == [] %>
+<% if @movies.empty? %>
   <p class="no-movies"> Sorry, we couldn't find any movies. Please try with another name.</p>
 <% else %>
   <% @movies.each do |movie| %>
   <div class="col-sm-12 col-md-12 col-lg-6">
-    <div class="card-product" data-id="<%= movie.id %>">
-      <% if !movie.photo.url.nil? %>
-        <%= image_tag cl_image_path movie.photo %>
-      <% end %>
-      <div class="card-product-infos">
-        <h2><%= movie.title %></h2>
-        <p> <%= movie.plot %> </p>
-        <p><strong> Year: <%= movie.year %> </strong></p>
-        <p><strong> <%= movie.id %> </strong></p>
-        <ul>
-          <li><%= image_tag(asset_path('us.svg')) if movie.us == true %></li>
-          <li><%= image_tag(asset_path('br.svg')) if movie.brazil == true %></li>
-          <li><%= image_tag(asset_path('pt.svg')) if movie.portugal == true %></li>
-          <li><%= image_tag(asset_path('se.svg')) if movie.sweden == true %></li>
-          <li><%= image_tag(asset_path('fr.svg')) if movie.france == true %></li>
-          <li><%= image_tag(asset_path('de.svg')) if movie.germany == true %></li>
-        </ul>
+    <%= link_to movie_path(movie), class: "movie-show", data: {id: movie.id} do %>
+      <div class="card-product" data-id="<%= movie.id %>">
+        <% if !movie.photo.url.nil? %>
+          <%= image_tag cl_image_path movie.photo %>
+        <% end %>
+        <div class="card-product-infos">
+          <h2><%= movie.title.truncate(40) %></h2>
+          <p><strong>Year: </strong><%= movie.year %> </p>
+          <% if movie.imdb_score != nil %>
+            <p> <strong>Cast: </strong><%= movie.actors %> </p>
+            <p> <strong>Director: </strong><%= movie.director %></p>
+            <p> <strong>IMDb rate: </strong><%= movie.imdb_score %></p>
+          <% end %>
+          <ul>
+            <li><%= image_tag(asset_path('us.svg')) if movie.us == true %></li>
+            <li><%= image_tag(asset_path('br.svg')) if movie.brazil == true %></li>
+            <li><%= image_tag(asset_path('pt.svg')) if movie.portugal == true %></li>
+            <li><%= image_tag(asset_path('se.svg')) if movie.sweden == true %></li>
+            <li><%= image_tag(asset_path('fr.svg')) if movie.france == true %></li>
+            <li><%= image_tag(asset_path('de.svg')) if movie.germany == true %></li>
+          </ul>
+        </div>
       </div>
-    </div>
+    <% end %>
     <br>
   </div>
   <% end %>

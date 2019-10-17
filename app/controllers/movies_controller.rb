@@ -1,6 +1,6 @@
 class MoviesController < ApplicationController
   protect_from_forgery except: :index
-  skip_before_action :authenticate_user!, only: [:index]
+  skip_before_action :authenticate_user!, only: [:index, :show]
 
   def index
     if params[:query].present?
@@ -11,5 +11,10 @@ class MoviesController < ApplicationController
     else
       @movies = Movie.limit(20)
     end
+  end
+
+  def show
+    @movie = Movie.find(params[:id])
+    @movies = Movie.search_by_title_and_plot(params[:query])
   end
 end
