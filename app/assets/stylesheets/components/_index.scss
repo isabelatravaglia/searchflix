@@ -2,3 +2,14 @@
 @import "alert";
 @import "avatar";
 @import "navbar";
+
+.all-movies a:link, .all-movies a:visited, .all-movies a:hover, .all-movies a:active,  {
+    text-decoration:none;
+}
+
+.movie-show:link, .movie-show:visited, .movie-show:hover, .movie-show:active,  {
+    text-decoration:none;
+    color: inherit;
+}
+
+

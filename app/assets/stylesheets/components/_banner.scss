@@ -69,7 +69,10 @@
   background: #26028C;
   color: white;
   font-family: Roboto;
-  /* display: none; */
+}
+
+.watchlist-btn:hover {
+  transform: scale(1.1);
 }
 
 .trans-banner {
