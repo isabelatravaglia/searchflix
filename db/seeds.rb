@@ -6,6 +6,9 @@
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
 
+# proxy_options = { http_proxyaddr: 'us-central.windscribe.com', http_proxyport: 443, http_proxyuser: 'lu1v0mtx-gsqrmd5', http_proxypass: 'pkzwjv4e7g' }
+# puts HTTParty.get('http://api.ipify.org', proxy_options).body
+
 start_time = Time.now
 puts "started seeding at #{start_time}"
 
@@ -24,6 +27,7 @@ u = User.create(email: "admin@admin.com", password: "123456")
 puts "creating movies"
 
 COUNTRY = 'us'
+MOVIE_PATH = 'https://www.netflix.com/browse/genre/34399'
 
 INDEX_CRITERION = ['az', 'za']
 urls_to_scrape = INDEX_CRITERION.map { |c| "https://www.netflix.com/browse/genre/34399?so=#{c}" }
@@ -32,12 +36,11 @@ PROD_HTML_PATH = "/app/"
 DEV_HTML_PATH = "/home/isabela/code/isabelatravaglia/searchflix/"
 Rails.env.production? ? HTML_PATH = PROD_HTML_PATH : HTML_PATH = DEV_HTML_PATH
 
-
 def browser
   if Rails.env.production?
     @_browser ||= Watir::Browser.new :chrome
   else
-    @_browser ||= Watir::Browser.new :firefox, headless: true
+    @_browser ||= Watir::Browser.new :firefox #, headless: true
   end
 end
 
@@ -218,6 +221,30 @@ def prepare_to_scroll_down(url_to_scrape)
     save_html(fetch_html_to_save(criterion))
   end
   scrape(fetch_html_to_save(criterion))
+end
+
+def check_scrape_files_existence
+  puts "checking if all scrape files for #{COUNTRY} exist"
+  puts "creating countries dir if they don't exist"
+  FileUtils.mkdir_p "countries/#{COUNTRY}"
+end
+
+def fetch_country_movie_genres
+  login unless @logged_in
+  browser.goto(MOVIE_PATH)
+  genre_btn = browser.div(class: "nfDropDown")
+  genre_btn.click
+  genre_hash = Hash.new
+  genre_div = browser.div(class: ["sub-menu", "theme-lakira"])
+  genre_div.uls.each do |li|
+    li.each do |e|
+      genre_url = e.a.href
+      genre_code = genre_url.partition("genre/").last.partition("?").first.to_i
+      genre_hash[genre_code] = e.a.text
+    end
+  end
+  genre_hash
+  # https://www.netflix.com/browse/genre/1365?bc=34399
 end
 
 urls_to_scrape.each { |url| prepare_to_scroll_down(url) }

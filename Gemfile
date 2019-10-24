@@ -15,6 +15,7 @@ gem 'nokogiri'
 gem 'watir'
 gem 'selenium-webdriver'
 gem 'pg_search', '~> 2.3.0'
+gem 'httparty'
 
 gem 'autoprefixer-rails'
 gem 'font-awesome-sass', '~> 5.6.1'
