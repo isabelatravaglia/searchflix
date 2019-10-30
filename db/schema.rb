@@ -10,10 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_10_14_145606) do
+ActiveRecord::Schema.define(version: 2019_10_28_182407) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "genres", force: :cascade do |t|
+    t.bigint "movie_id", null: false
+    t.string "netflix_genre_id"
+    t.string "genre_name"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["movie_id"], name: "index_genres_on_movie_id"
+  end
 
   create_table "movies", force: :cascade do |t|
     t.string "title"
@@ -33,7 +42,6 @@ ActiveRecord::Schema.define(version: 2019_10_14_145606) do
     t.integer "year"
     t.string "netflix_id"
     t.string "runtime"
-    t.string "genre"
     t.string "writer"
     t.boolean "omdb"
   end
@@ -59,6 +67,7 @@ ActiveRecord::Schema.define(version: 2019_10_14_145606) do
     t.index ["user_id"], name: "index_watchlists_on_user_id"
   end
 
+  add_foreign_key "genres", "movies"
   add_foreign_key "watchlists", "movies"
   add_foreign_key "watchlists", "users"
 end

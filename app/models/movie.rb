@@ -1,5 +1,7 @@
 class Movie < ApplicationRecord
   has_many :watchlists, dependent: :destroy
+  has_many :genres
+  validates :netflix_id, presence: true, uniqueness: true
   mount_uploader :photo, PhotoUploader
   default_scope { order('created_at DESC') }
 

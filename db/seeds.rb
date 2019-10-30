@@ -26,21 +26,23 @@ u = User.create(email: "admin@admin.com", password: "123456")
 
 puts "creating movies"
 
+
+# MOVIE_PATH = 'https://www.netflix.com/browse/genre/34399'
 COUNTRY = 'us'
-MOVIE_PATH = 'https://www.netflix.com/browse/genre/34399'
-
-# INDEX_CRITERION = ['az', 'za']
-# urls_to_scrape = INDEX_CRITERION.map { |c| "https://www.netflix.com/browse/genre/34399?so=#{c}" }
-
-PROD_HTML_PATH = "/app/countries/"
-DEV_HTML_PATH = "/home/isabela/code/isabelatravaglia/searchflix/countries/"
+PROD_HTML_PATH = "/app/countries/#{COUNTRY}"
+DEV_HTML_PATH = "/home/isabela/code/isabelatravaglia/searchflix/countries/#{COUNTRY}"
 Rails.env.production? ? HTML_PATH = PROD_HTML_PATH : HTML_PATH = DEV_HTML_PATH
+
+INDEX_CRITERIA = ['az', 'za']
+URLS_CRITERION_HASH = {}
+BASE_SCRAPE_URL = "https://www.netflix.com/browse/genre/34399?so="
+INDEX_CRITERIA.map { |c| URLS_CRITERION_HASH[c] = "https://www.netflix.com/browse/genre/34399?so=#{c}" }
 
 def browser
   if Rails.env.production?
     @_browser ||= Watir::Browser.new :chrome
   else
-    @_browser ||= Watir::Browser.new :firefox #, headless: true
+    @_browser ||= Watir::Browser.new :firefox, headless: true
   end
 end
 
@@ -98,16 +100,46 @@ def fetch_movie_details(m, title, year)
   puts "done with fetching OMDB details"
 end
 
-def fetch_movie_year(m)
-  puts "start fetching movie year"
-  netflix_id = m.netflix_id
-  browser.goto("https://www.netflix.com/title/#{netflix_id}")
-  return if browser.element(class: 'errorBox').exists?
+# def save_genre(m, genre_item)
+#   genre_url = genre_item.a.href
+#   genre_code = genre_url.partition("genre/").last.partition("?").first
+#   genre_name = genre_item.a.text
+#   genre = Genre.find_or_initialize_by(netflix_genre_id: genre_code)
+#   genre.genre_name = genre_name
+#   genre.movie = m
+#   genre.save
+# end
 
+def fetch_genre(m)
+  links = browser.as
+  genre_links = links.select { |e| e.href.include?("genre") }
+  genre_links.each do |link|
+    genre_code = link.href.partition("genre/").last
+    genre_name = link.text
+    genre = Genre.find_or_initialize_by(netflix_genre_id: genre_code, movie: m)
+    genre.genre_name = genre_name
+    # genre.movie = m
+    genre.save
+  end
+end
+
+def fetch_year(m)
   year_spans = browser.spans(class: ["title-info-metadata-item", "item-year"])
   year = year_spans[0].text.to_i
   m.year = year
   puts "Movie year is #{m.year}"
+end
+
+def fetch_movie_year_and_genre(m)
+  puts "entering movie page"
+  netflix_id = m.netflix_id
+  browser.goto("https://www.netflix.com/title/#{netflix_id}")
+  return if browser.element(class: 'errorBox').exists?
+
+  # puts "fetching year"
+  # fetch_year(m)
+  puts "fetching genre"
+  fetch_genre(m)
   sleep(rand(2..7))
 end
 
@@ -136,8 +168,11 @@ end
 
 def scrape(saved_html)
   puts "starting scraping!"
-  file = open(saved_html[:url]).read
+  puts "opening file #{saved_html[:scrape_file_path]}"
+  file = open(saved_html[:scrape_file_path]).read
+  puts "opening file with nokogiri"
   doc = Nokogiri::HTML(file)
+  puts "searching file elements"
   doc.search('.slider-refocus a').each do |movie|
     puts "creating/updating movie #{movie.text}"
     netflix_id = fetch_movie_netflix_id(movie)
@@ -147,29 +182,23 @@ def scrape(saved_html)
     puts "Does movie #{movie.text} has #{COUNTRY} set to true? #{m[:"#{COUNTRY}"]}"
     # fetch_movie_details(m, m.title, m.year) if (m.imdb_score.nil? and m.omdb != false)
     # m.save
-    m.genre = saved_html[:genre_name]
-    m.save
+    fetch_movie_year_and_genre(m)
+
     next if !m.id.nil? && m[:"#{COUNTRY}"] == true # skip if movie already exists for the current country
 
-    fetch_movie_country(saved_html, m)
+    fetch_movie_country(m)
 
     puts m.id.nil? ? "movie #{m.title} still doesn't have an id" : "movie #{m.title} has id #{m.id}"
     next unless m.id.nil? # skip if movie already exists
 
     m.netflix_id = netflix_id
-    fetch_movie_year(m) if m.year.nil?
+
     m.title = movie.text
     fetch_movie_details(m, m.title, m.year)
     fetch_movie_image(movie, m)
     m.save
     puts "#{movie.text} create with id #{m.id}!"
   end
-end
-
-def save_html(html_to_save)
-  File.open(html_to_save[:url], 'w') { |f| f.write @_browser.html }
-  puts "html saved!"
-  scrape(html_to_save)
 end
 
 def login
@@ -190,12 +219,22 @@ def login
   @logged_in = main_page?
 end
 
-def fetch_html_to_save(genre_code, genre_name)
+def logout
+  browser.goto("https://www.netflix.com/logout")
+  logout_btn = browser.a(class: ["authLinks", "signupBasicHeader"])
+  logout_btn.click
+end
+
+def save_html(html_to_save)
+  File.open(html_to_save[:scrape_file_path], 'w') { |f| f.write @_browser.html }
+  puts "html saved!"
+end
+
+def fetch_html_to_save(criterion)
   html_to_save = {
-    url: "#{HTML_PATH}#{COUNTRY}/movies_#{COUNTRY}_#{genre_code}.html",
+    scrape_file_path: "#{HTML_PATH}/movies_#{COUNTRY}_#{criterion}.html",
     country: COUNTRY,
-    genre_code: genre_code,
-    genre_name: genre_name
+    criterion: criterion
   }
   html_to_save
 end
@@ -226,48 +265,59 @@ end
 #   scrape(fetch_html_to_save(criterion))
 # end
 
-def create_scrape_file(genre_code, genre_name)
-  url_to_scrape = "https://www.netflix.com/browse/genre/#{genre_code}?bc=34399"
-  scrolling(url_to_scrape)
-  fetch_html_to_save(genre_code, genre_name)
-end
-
-def generate_movie_genre_hash(genre_div)
-  genre_hash = {}
-  genre_div.uls.each do |li|
-    li.each do |e|
-      genre_url = e.a.href
-      genre_code = genre_url.partition("genre/").last.partition("?").first.to_i
-      genre_hash[genre_code] = e.a.text
-    end
-  end
-  genre_hash
-end
-
-def fetch_country_movie_genres
+def create_scrape_file(url, criterion)
+  url_to_scrape = url + criterion
   login unless @logged_in
-  browser.goto(MOVIE_PATH)
-  genre_btn = browser.div(class: "nfDropDown")
-  genre_btn.click
-  genre_div = browser.div(class: ["sub-menu", "theme-lakira"])
-  generate_movie_genre_hash(genre_div)
+  scrolling(url_to_scrape)
+  html_to_save = fetch_html_to_save(criterion)
+  save_html(html_to_save)
+  logout
 end
+
+# create_scrape_file(URLS_CRITERION_HASH.each(&:last), URLS_CRITERION_HASH.each(&:first))
+
+# def generate_movie_genre_hash(genre_div)
+#   genre_hash = {}
+#   genre_div.uls.each do |li|
+#     li.each do |e|
+#       genre_url = e.a.href
+#       genre_code = genre_url.partition("genre/").last.partition("?").first.to_i
+#       genre_hash[genre_code] = e.a.text
+#     end
+#   end
+#   genre_hash
+# end
+
+# def fetch_country_movie_genres
+#   login unless @logged_in
+#   browser.goto(MOVIE_PATH)
+#   genre_btn = browser.div(class: "nfDropDown")
+#   genre_btn.click
+#   genre_div = browser.div(class: ["sub-menu", "theme-lakira"])
+#   generate_movie_genre_hash(genre_div)
+# end
 
 def check_scrape_files_existence
   puts "checking if scrape files for #{COUNTRY} exist"
   puts "creating countries dir if they don't exist"
-  country_dir = Pathname.new("countries/#{COUNTRY}")
-  FileUtils.mkdir_p "countries/#{COUNTRY}" unless country_dir.exist?
-  fetch_country_movie_genres.each do |hash_element|
-    genre_code = hash_element.first
-    genre_name = hash_element.last
-    scrape_file = "countries/#{COUNTRY}/movies_#{COUNTRY}_#{genre_code}.html"
-    scrape_file_path = Pathname.new(scrape_file)
+  country_dir_path = Pathname.new(HTML_PATH)
+  abs_country_dir_path = country_dir_path.to_path.partition("searchflix/").last
+  FileUtils.mkdir_p abs_country_dir_path unless country_dir_path.exist?
+  INDEX_CRITERIA.each do |criterion|
+    scrape_file = fetch_html_to_save(criterion)
+    scrape_file_path = Pathname.new(scrape_file[:scrape_file_path])
     if scrape_file_path.exist?
-      puts "Scrape file movies_#{COUNTRY}_#{genre_code}.html already exists. Would you like to overwrite it? (y/n)"
-      gets.chomp == "y" ? create_scrape_file(genre_code) : scrape(fetch_html_to_save(genre_code, genre_name))
+      puts "Scrape file #{scrape_file_path.to_path} already exists. Would you like to overwrite it? (y/n)"
+      if STDIN.gets.chomp.downcase == "y"
+        create_scrape_file(BASE_SCRAPE_URL, criterion)
+        scrape(fetch_html_to_save(criterion))
+      else
+        scrape(fetch_html_to_save(criterion))
+      end
+    else
+      create_scrape_file(BASE_SCRAPE_URL, criterion)
+      scrape(fetch_html_to_save(criterion))
     end
-    create_scrape_file(genre_code, genre_name)
   end
 end
 
