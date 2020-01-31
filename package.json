@@ -9,5 +9,6 @@
   },
   "devDependencies": {
     "webpack-dev-server": "^3.8.1"
-  }
+  },
+  "resolutions": { "serialize-javascript": "^2.1.1" }
 }
